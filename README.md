@@ -4,15 +4,16 @@ Simple Gulp assembly for undemanding people.
 
 #### What's inside?
 
-1. browser-sync
-2. del
-3. gulp
-4. gulp-autoprefixer
-5. gulp-concat
-6. gulp-imagemin
-7. gulp-stylus
-8. gulp-uglify-es
-9. jquery
+01. browser-sync
+02. del
+03. gulp
+04. gulp-autoprefixer
+05. gulp-concat
+06. gulp-imagemin
+07. gulp-sass
+08. gulp-uglify-es
+09. jquery
+10. sass
 
 ### What's the output?
 

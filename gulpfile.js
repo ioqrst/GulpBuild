@@ -1,6 +1,12 @@
-const { src, dest, watch, parallel, series } = require('gulp');
+const {
+	src,
+	dest,
+	watch,
+	parallel,
+	series
+} = require('gulp');
 
-const stylus = require('gulp-stylus');
+const sassCompil = require('gulp-sass')(require("sass"));
 const concat = require('gulp-concat');
 const autoPrefixer = require('gulp-autoprefixer');
 const imagemin = require('gulp-imagemin');
@@ -20,11 +26,22 @@ function images() {
 	return src('app/images/**/*')
 		.pipe(
 			imagemin([
-				imagemin.gifsicle({ interlaced: true }),
-				imagemin.mozjpeg({ quality: 75, progressive: true }),
-				imagemin.optipng({ optimizationLevel: 5 }),
+				imagemin.gifsicle({
+					interlaced: true
+				}),
+				imagemin.mozjpeg({
+					quality: 75,
+					progressive: true
+				}),
+				imagemin.optipng({
+					optimizationLevel: 5
+				}),
 				imagemin.svgo({
-					plugins: [{ removeViewBox: true }, { cleanupIDs: false }],
+					plugins: [{
+						removeViewBox: true
+					}, {
+						cleanupIDs: false
+					}],
 				}),
 			]),
 		)
@@ -40,8 +57,10 @@ function scripts() {
 }
 
 function styles() {
-	return src('app/stylus/style.styl')
-		.pipe(stylus({ compress: true }))
+	return src('app/scss/style.scss')
+		.pipe(sassCompil({
+			compress: true
+		}))
 		.pipe(concat('style.min.css'))
 		.pipe(
 			autoPrefixer({
@@ -58,13 +77,15 @@ function clearDist() {
 }
 
 function build() {
-	return src(['app/css/style.min.css', 'app/fonts/**/*', 'app/js/main.min.js', 'app/*.html'], { base: 'app' }).pipe(
+	return src(['app/css/style.min.css', 'app/fonts/**/*', 'app/js/main.min.js', 'app/*.html'], {
+		base: 'app'
+	}).pipe(
 		dest('dist'),
 	);
 }
 
 function watching() {
-	watch(['app/stylus/**/*.styl'], styles);
+	watch(['app/scss/**/*.scss'], styles);
 	watch(['app/js/main.js', '!app/js/main.min.js'], scripts);
 	watch(['app/*.html']).on('change', browserSync.reload);
 }
