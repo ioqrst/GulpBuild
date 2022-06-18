@@ -1,94 +1,94 @@
+`use strict`;
+
 const {
-	src,
-	dest,
-	watch,
-	parallel,
-	series
-} = require('gulp');
+    app,
+    dest,
+    watch,
+    series,
+    parallel,
+    src
+} = require("gulp");
 
-const sassCompil = require('gulp-sass')(require("sass"));
-const concat = require('gulp-concat');
-const autoPrefixer = require('gulp-autoprefixer');
-const imagemin = require('gulp-imagemin');
-const del = require('del');
-const uglify = require('gulp-uglify-es').default;
-const browserSync = require('browser-sync').create();
+// Плагины
+const fileInclude = require("gulp-file-include");
+const htmlMin = require("gulp-htmlmin");
+const concat = require("gulp-concat");
+const csso = require("gulp-csso");
+const sass = require("gulp-sass")(require("sass"));
+const del = require("del");
+const babel = require('gulp-babel');
+const uglify = require("gulp-uglify");
+const browserSync = require("browser-sync").create();
 
-function bSync() {
-	browserSync.init({
-		server: {
-			baseDir: 'app/',
-		},
-	});
+// Обработка HTML
+const html = () => {
+    return src("./app/html/*.html")
+        .pipe(fileInclude())
+        .pipe(htmlMin({
+            collapseWhitespace: true
+        }))
+        .pipe(dest("./app"))
+        .pipe(browserSync.stream());
 }
 
-function images() {
-	return src('app/images/**/*')
-		.pipe(
-			imagemin([
-				imagemin.gifsicle({
-					interlaced: true
-				}),
-				imagemin.mozjpeg({
-					quality: 75,
-					progressive: true
-				}),
-				imagemin.optipng({
-					optimizationLevel: 5
-				}),
-				imagemin.svgo({
-					plugins: [{
-						removeViewBox: true
-					}, {
-						cleanupIDs: false
-					}],
-				}),
-			]),
-		)
-		.pipe(dest('dist/images'));
+// Обработка CSS
+const scss = () => {
+    return src("./app/scss/**/*.scss")
+        .pipe(sass())
+        .pipe(concat("style.min.css"))
+        .pipe(csso())
+        .pipe(dest("./app/css"))
 }
 
-function scripts() {
-	return src(['node_modules/jquery/dist/jquery.js', 'app/js/main.js'])
-		.pipe(concat('main.min.js'))
-		.pipe(uglify())
-		.pipe(dest('app/js'))
-		.pipe(browserSync.stream());
+// Обработка JS
+const js = () => {
+    return src("./app/js/app.js")
+        .pipe(babel({
+            presets: ['@babel/env']
+        }))
+        .pipe(concat("main.min.js"))
+        .pipe(uglify())
+        .pipe(dest("./app/js"))
 }
 
-function styles() {
-	return src('app/scss/style.scss')
-		.pipe(sassCompil({
-			compress: true
-		}))
-		.pipe(concat('style.min.css'))
-		.pipe(
-			autoPrefixer({
-				overrideBrowserslist: ['last 10 version'],
-				grid: true,
-			}),
-		)
-		.pipe(dest('app/css'))
-		.pipe(browserSync.stream());
+// Удаление данных
+const clear = () => {
+    return del("./dist");
 }
 
-function clearDist() {
-	return del('dist');
+// Сервер
+const server = () => {
+    browserSync.init({
+        server: {
+            baseDir: "./app"
+        }
+    })
 }
 
-function build() {
-	return src(['app/css/style.min.css', 'app/fonts/**/*', 'app/js/main.min.js', 'app/*.html'], {
-		base: 'app'
-	}).pipe(
-		dest('dist'),
-	);
+// Копирование
+const build = () => {
+    return src(['./app/css/style.min.css', './app/fonts/**/*', './app/js/main.min.js', './app/*.html'], {
+        base: 'app'
+    }).pipe(dest('dist'));
 }
 
-function watching() {
-	watch(['app/scss/**/*.scss'], styles);
-	watch(['app/js/main.js', '!app/js/main.min.js'], scripts);
-	watch(['app/*.html']).on('change', browserSync.reload);
+// Наблюдатель
+const watcher = () => {
+    watch("./app/html/*.html", html).on("all", browserSync.reload)
+    watch("./app/scss/**/*.scss", scss).on("all", browserSync.reload)
+    watch("./app/js/app.js", js).on("all", browserSync.reload)
 }
 
-exports.default = parallel(styles, scripts, bSync, watching);
-exports.build = series(clearDist, images, build);
+// Сборка
+exports.default = series(
+    clear,
+    html,
+    scss,
+    // js,
+    parallel(watcher, server)
+)
+
+exports.build = series(
+    clear,
+    parallel(html, scss, js, build)
+)
